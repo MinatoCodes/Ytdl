@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
-from pytube import YouTube
+import subprocess
+import json
 
 app = Flask(__name__)
 
@@ -7,34 +8,31 @@ app = Flask(__name__)
 def youtube_dl():
     url = request.args.get("url")
     if not url:
-        return jsonify({
-            "success": False,
-            "error": "Missing 'url' query parameter"
-        }), 400
+        return jsonify({"success": False, "error": "No URL provided"}), 400
 
     try:
-        yt = YouTube(url)
-        stream = yt.streams.filter(progressive=True, file_extension="mp4") \
-                           .order_by("resolution").desc().first()
+        # Run yt-dlp to get video info (best quality direct URL)
+        result = subprocess.run(
+            ["yt-dlp", "-f", "best", "--dump-json", url],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
 
-        if not stream:
-            return jsonify({
-                "success": False,
-                "error": "No suitable stream found"
-            }), 404
+        if result.returncode != 0:
+            return jsonify({"success": False, "error": result.stderr.strip()})
 
+        info = json.loads(result.stdout)
         return jsonify({
             "success": True,
             "creator": "MinatoCodes",
             "platform": "youtube",
-            "download_url": stream.url
+            "download_url": info.get("url")
         })
+
     except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
+        return jsonify({"success": False, "error": str(e)})
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
-            
+    app.run(host="0.0.0.0", port=8000)
+        
