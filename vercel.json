@@ -1,13 +1,9 @@
 {
   "version": 2,
   "builds": [
-    { "src": "api/youtube.js", "use": "@vercel/node" },
-    { "src": "api/yt_fetch.py", "use": "@vercel/python" }
+    { "src": "api/youtube.py", "use": "@vercel/python" }
   ],
   "routes": [
-    {
-      "src": "/api/youtube",
-      "dest": "/api/youtube.js"
-    }
+    { "src": "/api/youtube", "dest": "/api/youtube.py" }
   ]
 }
