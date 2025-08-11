@@ -11,9 +11,9 @@ def youtube_dl():
         return jsonify({"success": False, "error": "No URL provided"}), 400
 
     try:
-        # Run yt-dlp to get video info (best quality direct URL)
+        # Let yt-dlp choose best available formats (no -f best to avoid warning)
         result = subprocess.run(
-            ["yt-dlp", "-f", "best", "--dump-json", url],
+            ["yt-dlp", "--dump-json", "--no-warnings", "--geo-bypass", url],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
@@ -22,7 +22,10 @@ def youtube_dl():
         if result.returncode != 0:
             return jsonify({"success": False, "error": result.stderr.strip()})
 
-        info = json.loads(result.stdout)
+        # Only use the last JSON line in case there are multiple
+        last_line = result.stdout.strip().split("\n")[-1]
+        info = json.loads(last_line)
+
         return jsonify({
             "success": True,
             "creator": "MinatoCodes",
@@ -35,4 +38,4 @@ def youtube_dl():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000)
-        
+                       
