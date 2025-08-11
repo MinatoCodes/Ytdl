@@ -1,13 +1,20 @@
 import json
 from pytube import YouTube
 
-def handler(request, response):
-    url = request.args.get("url")
+def handler(event, context):
+    # Get query parameters
+    params = event.get("queryStringParameters") or {}
+    url = params.get("url")
+
     if not url:
-        return response.status(400).json({
-            "success": False,
-            "error": "Missing 'url' query parameter"
-        })
+        return {
+            "statusCode": 400,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({
+                "success": False,
+                "error": "Missing 'url' query parameter"
+            })
+        }
 
     try:
         yt = YouTube(url)
@@ -15,22 +22,35 @@ def handler(request, response):
                            .order_by("resolution").desc().first()
 
         if not stream:
-            return response.status(404).json({
-                "success": False,
-                "error": "No suitable stream found"
-            })
+            return {
+                "statusCode": 404,
+                "headers": {"Content-Type": "application/json"},
+                "body": json.dumps({
+                    "success": False,
+                    "error": "No suitable stream found"
+                })
+            }
 
-        data = {
+        result = {
             "success": True,
             "creator": "MinatoCodes",
             "platform": "youtube",
             "download_url": stream.url
         }
-        return response.status(200).json(data)
+
+        return {
+            "statusCode": 200,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps(result)
+        }
 
     except Exception as e:
-        return response.status(500).json({
-            "success": False,
-            "error": str(e)
-        })
+        return {
+            "statusCode": 500,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({
+                "success": False,
+                "error": str(e)
+            })
+            }
         
